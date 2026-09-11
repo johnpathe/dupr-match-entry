@@ -1,0 +1,471 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>DUPR Match Entry</title>
+<style>
+  :root {
+    --bg: #f4f6f9; --card: #ffffff; --border: #dde3ea; --text: #1c2530;
+    --muted: #6b7684; --accent: #2456d6; --accent-hover: #1c44b0;
+    --danger: #c0392b; --danger-bg: #fdecea; --ok-bg: #eaf7ee; --ok: #1c7a3d;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    background: var(--bg); color: var(--text); padding: 24px;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  .card {
+    background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+    padding: 18px 20px; margin-bottom: 18px;
+  }
+  .card h2 {
+    font-size: 15px; margin: 0 0 14px; display: flex; align-items: center;
+    justify-content: space-between; cursor: pointer; user-select: none;
+  }
+  .card h2 .chev { font-size: 12px; color: var(--muted); }
+  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  input[type=text], input[type=date], input[type=number], select {
+    width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px;
+    font-size: 14px; background: #fff; color: var(--text);
+  }
+  .row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row > div { flex: 1; min-width: 180px; }
+  .roster-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 6px; background: #eef2f8;
+    border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 12px;
+    font-size: 13px;
+  }
+  .chip button {
+    border: none; background: none; color: var(--muted); cursor: pointer; font-size: 15px;
+    line-height: 1; padding: 2px 6px; border-radius: 50%;
+  }
+  .chip button:hover { background: var(--danger-bg); color: var(--danger); }
+  .search-box { position: relative; max-width: 340px; }
+  .search-results {
+    position: absolute; z-index: 5; top: 100%; left: 0; right: 0; background: #fff;
+    border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; max-height: 240px;
+    overflow-y: auto; box-shadow: 0 6px 20px rgba(0,0,0,.08);
+  }
+  .search-results .item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f0f2f5; }
+  .search-results .item:hover { background: #f4f7ff; }
+  .search-results .item small { color: var(--muted); }
+  button.btn {
+    background: var(--accent); color: #fff; border: none; border-radius: 7px;
+    padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  button.btn:hover { background: var(--accent-hover); }
+  button.btn.secondary { background: #eef1f6; color: var(--text); }
+  button.btn.secondary:hover { background: #e2e7ee; }
+  button.btn.danger-outline { background: #fff; color: var(--danger); border: 1px solid var(--danger); }
+  button.btn.danger-outline:hover { background: var(--danger-bg); }
+  button.btn.submit { background: var(--ok); }
+  button.btn.submit:hover { background: #145c2e; }
+  .match-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; background: #fbfcfe; }
+  .match-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .team-block { border: 1px dashed var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
+  .team-block h4 { margin: 0 0 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .team-cols { display: flex; gap: 10px; }
+  .team-cols > div { flex: 1; }
+  .games-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
+  .game-col { text-align: center; }
+  .game-col label { text-align: center; }
+  .game-col input { text-align: center; padding: 6px; }
+  .actions-row { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+  pre#previewBox {
+    background: #10151d; color: #cfe3ff; padding: 14px; border-radius: 8px;
+    font-size: 12px; max-height: 340px; overflow: auto; white-space: pre-wrap;
+  }
+  .results .item { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+  .results .ok { background: var(--ok-bg); color: var(--ok); }
+  .results .fail { background: var(--danger-bg); color: var(--danger); }
+  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>DUPR Match Entry</h1>
+  <p class="sub">Local tool — nothing reaches DUPR until you click <b>Submit to DUPR</b> and confirm.</p>
+
+  <div class="card" id="setupCard">
+    <h2 onclick="toggleSetup()">Season Setup <span class="chev" id="setupChev">▾</span></h2>
+    <div id="setupBody">
+      <div class="row">
+        <div>
+          <label>Event Name</label>
+          <input type="text" id="eventName">
+        </div>
+        <div>
+          <label>Location</label>
+          <input type="text" id="location">
+        </div>
+        <div style="max-width:160px">
+          <label>Club ID (optional)</label>
+          <input type="text" id="clubId">
+        </div>
+      </div>
+
+      <label>Roster</label>
+      <div class="roster-list" id="rosterList"></div>
+      <div class="search-box">
+        <input type="text" id="rosterSearch" placeholder="Search DUPR players to add to roster…">
+        <div class="search-results" id="rosterSearchResults" style="display:none"></div>
+      </div>
+      <div class="actions-row">
+        <button class="btn" onclick="saveRoster()">Save Roster</button>
+        <span class="hint" id="rosterSavedHint"></span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>This Week</h2>
+    <div class="row">
+      <div style="max-width:200px">
+        <label>Date</label>
+        <input type="date" id="matchDate">
+      </div>
+    </div>
+    <div id="matches"></div>
+    <button class="btn secondary" onclick="addMatch()">+ Add Match</button>
+  </div>
+
+  <div class="card">
+    <h2>Preview &amp; Submit</h2>
+    <div class="actions-row">
+      <button class="btn secondary" onclick="doPreview()">Preview JSON</button>
+      <button class="btn secondary" onclick="downloadCsv()">Download CSV (for DUPR's own Import)</button>
+      <button class="btn submit" onclick="doSubmit()">Submit to DUPR</button>
+    </div>
+    <p class="hint">
+      The CSV button downloads a file in DUPR's own "Import Matches" format
+      (Club Overview → Matches → Import Matches → Download Template is where
+      that format comes from) — use it if you'd rather upload through DUPR's
+      website than click Submit here.
+    </p>
+    <pre id="previewBox">(click Preview to see the exact payload that would be sent)</pre>
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<script>
+let roster = { eventName: "", location: "", clubId: null, players: [] };
+let matches = [];
+let matchSeq = 0;
+
+function todayISO() {
+  const d = new Date();
+  return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
+}
+
+async function loadRoster() {
+  const r = await fetch("/api/roster");
+  roster = await r.json();
+  document.getElementById("eventName").value = roster.eventName || "";
+  document.getElementById("location").value = roster.location || "";
+  document.getElementById("clubId").value = roster.clubId || "";
+  renderRosterChips();
+}
+
+function renderRosterChips() {
+  const el = document.getElementById("rosterList");
+  el.innerHTML = "";
+  roster.players.forEach(p => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.innerHTML = `${p.name} <button title="remove">&times;</button>`;
+    chip.querySelector("button").onclick = () => {
+      roster.players = roster.players.filter(x => x.id !== p.id);
+      renderRosterChips();
+      renderAllTeamSelects();
+    };
+    el.appendChild(chip);
+  });
+}
+
+function toggleSetup() {
+  const body = document.getElementById("setupBody");
+  const chev = document.getElementById("setupChev");
+  const hidden = body.style.display === "none";
+  body.style.display = hidden ? "" : "none";
+  chev.textContent = hidden ? "▾" : "▸";
+}
+
+async function saveRoster() {
+  roster.eventName = document.getElementById("eventName").value;
+  roster.location = document.getElementById("location").value;
+  const cid = document.getElementById("clubId").value;
+  roster.clubId = cid ? parseInt(cid, 10) : null;
+  await fetch("/api/roster", {method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify(roster)});
+  const hint = document.getElementById("rosterSavedHint");
+  hint.textContent = "Saved ✓";
+  setTimeout(() => hint.textContent = "", 1500);
+}
+
+let searchTimer = null;
+document.getElementById("rosterSearch").addEventListener("input", (e) => {
+  clearTimeout(searchTimer);
+  const q = e.target.value.trim();
+  const box = document.getElementById("rosterSearchResults");
+  if (q.length < 2) { box.style.display = "none"; return; }
+  searchTimer = setTimeout(async () => {
+    const r = await fetch("/api/search_players?q=" + encodeURIComponent(q));
+    const hits = await r.json();
+    box.innerHTML = "";
+    (hits.error ? [] : hits).forEach(h => {
+      const div = document.createElement("div");
+      div.className = "item";
+      div.innerHTML = `${h.name} <small>DUPR ${h.duprId || "?"} · doubles ${h.doubles || "NR"} · id ${h.id}${h.shortAddress ? " · " + h.shortAddress : ""}</small>`;
+      div.onclick = () => {
+        if (!roster.players.find(p => p.id === h.id)) {
+          roster.players.push({id: h.id, name: h.name, duprId: h.duprId});
+          renderRosterChips();
+          renderAllTeamSelects();
+        }
+        box.style.display = "none";
+        document.getElementById("rosterSearch").value = "";
+      };
+      box.appendChild(div);
+    });
+    box.style.display = hits.length ? "block" : "none";
+  }, 350);
+});
+
+function playerOptionsHtml(selectedId) {
+  let html = `<option value="">— none —</option>`;
+  roster.players.forEach(p => {
+    html += `<option value="${p.id}" ${String(p.id)===String(selectedId)?"selected":""}>${p.name}</option>`;
+  });
+  return html;
+}
+
+function renderAllTeamSelects() {
+  matches.forEach(m => renderMatch(m.id));
+}
+
+function addMatch() {
+  const id = ++matchSeq;
+  matches.push({
+    id,
+    team1: [null, null],
+    team2: [null, null],
+    games: [["", ""]],
+  });
+  renderMatches();
+}
+
+function removeMatch(id) {
+  matches = matches.filter(m => m.id !== id);
+  renderMatches();
+}
+
+function addGame(id) {
+  const m = matches.find(x => x.id === id);
+  if (m.games.length < 5) m.games.push(["", ""]);
+  renderMatch(id);
+}
+
+function removeGame(id) {
+  const m = matches.find(x => x.id === id);
+  if (m.games.length > 1) m.games.pop();
+  renderMatch(id);
+}
+
+function renderMatches() {
+  const el = document.getElementById("matches");
+  el.innerHTML = "";
+  matches.forEach(m => {
+    const card = document.createElement("div");
+    card.className = "match-card";
+    card.id = "match-" + m.id;
+    el.appendChild(card);
+    renderMatch(m.id);
+  });
+}
+
+function renderMatch(id) {
+  const m = matches.find(x => x.id === id);
+  const card = document.getElementById("match-" + id);
+  if (!card) return;
+
+  const teamHtml = (label, teamKey) => `
+    <div class="team-block">
+      <h4>${label}</h4>
+      <div class="team-cols">
+        <div>
+          <select onchange="setTeamPlayer(${id}, '${teamKey}', 0, this.value)">
+            ${playerOptionsHtml(m[teamKey][0])}
+          </select>
+        </div>
+        <div>
+          <select onchange="setTeamPlayer(${id}, '${teamKey}', 1, this.value)">
+            ${playerOptionsHtml(m[teamKey][1])}
+          </select>
+        </div>
+      </div>
+      <div class="hint">Leave 2nd slot as "— none —" for singles.</div>
+    </div>`;
+
+  const gamesHtml = m.games.map((g, i) => `
+    <div class="game-col">
+      <label>Game ${i+1}</label>
+      <input type="number" min="0" value="${g[0]}" onchange="setGameScore(${id}, ${i}, 0, this.value)">
+      <input type="number" min="0" value="${g[1]}" style="margin-top:6px" onchange="setGameScore(${id}, ${i}, 1, this.value)">
+    </div>`).join("");
+
+  card.innerHTML = `
+    <div class="top">
+      <strong>Match</strong>
+      <button class="btn danger-outline" onclick="removeMatch(${id})">Remove match</button>
+    </div>
+    ${teamHtml("Team 1", "team1")}
+    ${teamHtml("Team 2", "team2")}
+    <label>Score</label>
+    <div class="games-grid">${gamesHtml}</div>
+    <div class="actions-row">
+      <button class="btn secondary" onclick="addGame(${id})" ${m.games.length>=5?"disabled":""}>+ Add Game</button>
+      <button class="btn secondary" onclick="removeGame(${id})" ${m.games.length<=1?"disabled":""}>- Remove Game</button>
+    </div>`;
+}
+
+function setTeamPlayer(id, teamKey, slot, value) {
+  const m = matches.find(x => x.id === id);
+  m[teamKey][slot] = value || null;
+}
+
+function setGameScore(id, gameIdx, slot, value) {
+  const m = matches.find(x => x.id === id);
+  m.games[gameIdx][slot] = value;
+}
+
+function buildRequestBody() {
+  const date = document.getElementById("matchDate").value;
+  const payloadMatches = matches.map(m => {
+    const team1 = m.team1.filter(Boolean);
+    const team2 = m.team2.filter(Boolean);
+    const games = m.games.filter(g => g[0] !== "" && g[1] !== "");
+    return { team1, team2, games };
+  });
+  return {
+    event: document.getElementById("eventName").value,
+    location: document.getElementById("location").value,
+    date,
+    matches: payloadMatches,
+  };
+}
+
+async function doPreview() {
+  const body = buildRequestBody();
+  const box = document.getElementById("previewBox");
+  if (!body.matches.length) { box.textContent = "Add at least one match first."; return; }
+  const r = await fetch("/api/preview", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
+  const data = await r.json();
+  box.textContent = JSON.stringify(data.payloads || data, null, 2);
+}
+
+async function doSubmit() {
+  const body = buildRequestBody();
+  if (!body.matches.length) { alert("Add at least one match first."); return; }
+  const n = body.matches.length;
+  const summary = `Submit ${n} match${n>1?"es":""} to DUPR for "${body.event}" on ${body.date}?\n\nThis goes live on the real DUPR site. Preview first if you haven't.`;
+  if (!confirm(summary)) return;
+
+  const r = await fetch("/api/submit", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
+  const data = await r.json();
+  const el = document.getElementById("results");
+  el.innerHTML = "";
+  (data.results || []).forEach((res, i) => {
+    const div = document.createElement("div");
+    div.className = "item " + (res.ok ? "ok" : "fail");
+    const idOut = res.response && res.response.result && res.response.result.id;
+    div.textContent = res.ok
+      ? `Match ${i+1}: saved ✓ ${idOut ? "(id " + idOut + ")" : ""}`
+      : `Match ${i+1}: FAILED — ${res.error || (res.response && res.response.message) || res.status}`;
+    el.appendChild(div);
+  });
+  if (data.error) {
+    el.innerHTML = `<div class="item fail">${data.error}</div>`;
+  }
+}
+
+// --- CSV export, matching DUPR's own "Import Matches" template exactly ---
+// (Club Overview -> Matches -> Import Matches -> Download Template)
+const CSV_HEADER = [
+  "matchType","event","date",
+  "playerA1","playerA1DuprId","playerA1ExternalId",
+  "playerA2","playerA2DuprId","playerA2ExternalId",
+  "playerB1","playerB1DuprId","playerB1ExternalId",
+  "playerB2","playerB2DuprId","playerB2ExternalId",
+  "teamAGame1","teamBGame1","teamAGame2","teamBGame2",
+  "teamAGame3","teamBGame3","teamAGame4","teamBGame4",
+  "teamAGame5","teamBGame5","location","scoreType",
+];
+
+function csvCell(v) {
+  v = v === null || v === undefined ? "" : String(v);
+  return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+
+function playerInfo(id) {
+  const p = roster.players.find(x => String(x.id) === String(id));
+  return p ? {name: p.name, duprId: p.duprId || ""} : {name: "", duprId: ""};
+}
+
+function buildCsvRows() {
+  const date = document.getElementById("matchDate").value;
+  const event = document.getElementById("eventName").value;
+  const location = document.getElementById("location").value;
+  const rows = [];
+  matches.forEach(m => {
+    const t1 = m.team1.filter(Boolean);
+    const t2 = m.team2.filter(Boolean);
+    if (!t1.length || !t2.length) return;
+    const games = m.games.filter(g => g[0] !== "" && g[1] !== "");
+    const a1 = playerInfo(t1[0]), a2 = t1[1] ? playerInfo(t1[1]) : {name:"", duprId:""};
+    const b1 = playerInfo(t2[0]), b2 = t2[1] ? playerInfo(t2[1]) : {name:"", duprId:""};
+    const gameCells = [];
+    for (let i = 0; i < 5; i++) {
+      gameCells.push(games[i] ? games[i][0] : "", games[i] ? games[i][1] : "");
+    }
+    rows.push([
+      (t1.length > 1 || t2.length > 1) ? "D" : "S", event, date,
+      a1.name, a1.duprId, "",
+      a2.name, a2.duprId, "",
+      b1.name, b1.duprId, "",
+      b2.name, b2.duprId, "",
+      ...gameCells,
+      location, "SIDEOUT",
+    ]);
+  });
+  return rows;
+}
+
+function downloadCsv() {
+  const rows = buildCsvRows();
+  if (!rows.length) {
+    alert("No complete matches to export yet — each match needs both teams filled in and at least one game scored.");
+    return;
+  }
+  const csv = [CSV_HEADER, ...rows].map(r => r.map(csvCell).join(",")).join("\r\n") + "\r\n";
+  const blob = new Blob([csv], {type: "text/csv"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const dateStr = document.getElementById("matchDate").value || "matches";
+  a.href = url;
+  a.download = `dupr-matches-${dateStr}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+// init
+document.getElementById("matchDate").value = todayISO();
+loadRoster().then(() => addMatch());
+</script>
+</body>
+</html>

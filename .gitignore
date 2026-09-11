@@ -1,0 +1,9 @@
+.venv/
+.env
+.pw-profile/
+__pycache__/
+*.pyc
+
+# Real player names/DUPR IDs stay local only. roster.example.json (tracked)
+# is the template; copy it to roster.json and fill in your own roster.
+roster.json

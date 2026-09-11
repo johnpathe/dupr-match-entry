@@ -1,0 +1,9 @@
+{
+  "eventName": "My League Night",
+  "location": "My Venue, City, State",
+  "clubId": null,
+  "players": [
+    {"id": 1234567890, "name": "Jane Doe", "duprId": "AB12C3"},
+    {"id": 1234567891, "name": "Alex Smith", "duprId": "DE45F6"}
+  ]
+}
