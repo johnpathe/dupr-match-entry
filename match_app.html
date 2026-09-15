@@ -404,14 +404,14 @@ function renderMatch(id) {
       <button class="btn danger-outline" onclick="removeMatch(${id})">Remove match</button>
     </div>
     <div class="teams-row">
-      ${teamHtml("Team 1/A", "team1")}
-      ${teamHtml("Team 2/B", "team2")}
+      ${teamHtml("Team A", "team1")}
+      ${teamHtml("Team B", "team2")}
     </div>
     <div class="hint">Leave a team's 2nd player as "— none —" for singles.</div>
     <div class="score-table">
       <div></div>${headCells}
-      <div class="row-label">Team 1/A</div>${row1Cells}
-      <div class="row-label">Team 2/B</div>${row2Cells}
+      <div class="row-label">Team A</div>${row1Cells}
+      <div class="row-label">Team B</div>${row2Cells}
     </div>
     <div class="actions-row">
       <button class="btn secondary" onclick="addGame(${id})" ${m.games.length>=5?"disabled":""}>+ Add Game</button>

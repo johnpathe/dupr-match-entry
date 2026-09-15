@@ -26,9 +26,8 @@ dependencies and log in.)
 - **This Week**: pick the date, then click **+ Add Match** for each match —
   it jumps focus straight to the new match's first player field, so a whole
   week can be entered from the keyboard without reaching for the mouse. Each
-  match has 2 players per team ("Team 1/A" and "Team 2/B" — DUPR uses both
-  namings depending on where you look, so the app shows both), 1–5 games,
-  and leaving a team's 2nd player as "— none —" makes it singles.
+  match has 2 players per team (Team A / Team B), 1–5 games, and leaving a
+  team's 2nd player as "— none —" makes it singles.
 - **Preview** builds the exact payload that would be sent to DUPR and shows
   it — this never contacts DUPR.
 - **Download CSV** produces a file in DUPR's own "Import Matches" format
