@@ -3,7 +3,10 @@
 A local tool for entering weekly pickleball match results to
 [DUPR](https://dupr.com) and tracking your league's team win/loss records,
 without retyping the same event, location, and player roster every time.
-Built around [offsetkeyz/dupr-api-client](https://github.com/offsetkeyz/dupr-api-client).
+
+Talks to DUPR's own web API directly over plain HTTP (`requests` + your own
+login cookie) — no third-party DUPR client library. See
+[No third-party DUPR library](#no-third-party-dupr-library) below for why.
 
 ## Quick start
 
@@ -78,9 +81,10 @@ matches than what's currently in "This Week") and compute:
 - **Predict a Matchup** — pick two players per side and get a win-probability
   estimate and expected rating-point swing.
 
-On the predictor: DUPR does not expose a public prediction endpoint. The
-community client library documents one (`POST /match/v1.0/expected-score`),
-but every payload shape tried against it returns a generic 400, and DUPR's own
+On the predictor: DUPR does not expose a public prediction endpoint. A
+third-party DUPR client library once documented one
+(`POST /match/v1.0/expected-score`), but every payload shape tried against it
+returns a generic 400, and DUPR's own
 "New Match" page never calls it either while you fill in two full teams — no
 live reference exists to reverse-engineer it from. So the predictor uses a
 standard rating-difference win-probability model instead, with its "typical
@@ -142,7 +146,7 @@ stays on your machine the same way.
 | `roster.example.json` | Generic template — copy to `roster.json` and fill in your own roster |
 | `roster.json` | **Not tracked in git.** Your real event name, location, club ID, and players |
 | `get_token.py` | Logs in via a real browser once, saves your DUPR session token |
-| `dupr_session.py` | `make_client()` — a configured `DUPRClient` (auth + TLS fixes below) |
+| `dupr_session.py` | `make_client()` — a plain `requests.Session` with DUPR's auth cookie + a TLS fix (below) |
 | `example.py` | Minimal example: prints your profile and ratings |
 | `dupr-csv-import-template.csv` | DUPR's own CSV import template, for reference |
 | `requirements.txt` | Python dependencies |
@@ -182,10 +186,9 @@ just call them directly before deciding how to submit.
 ## Two things that made this non-obvious
 
 1. **Auth is by cookie, not Bearer.** DUPR's current API (`api.dupr.com`) reads
-   the `__Host-dupr_at` cookie. `dupr_session.py` sets it on the client's
-   `requests` session instead of using the library's `bearer_token` arg (which
-   sends an `Authorization` header the API rejects). The legacy
-   `backend.mydupr.com` base URL from the library's docs no longer works.
+   the `__Host-dupr_at` cookie, not an `Authorization: Bearer` header.
+   `dupr_session.py` sets it directly on a `requests.Session`. (The legacy
+   `backend.mydupr.com` API some old docs reference no longer works at all.)
 
 2. **This machine sits behind a TLS-inspecting proxy.** Python's bundled CA
    bundle fails cert validation against DUPR's certs. `dupr_session.py` calls
@@ -198,18 +201,41 @@ If `get_token.py` breaks: log in at <https://dashboard.dupr.com>, open DevTools
 → Application → Cookies → `https://api.dupr.com`, copy the `__Host-dupr_at`
 value into `.env` as `DUPR_BEARER_TOKEN=...`.
 
-## Using the client library directly
+## No third-party DUPR library
+
+This started out using [offsetkeyz/dupr-api-client](https://github.com/offsetkeyz/dupr-api-client)
+for its `requests.Session` handling, but every one of its own request-building
+methods turned out to be either wrong (stale endpoints/payload shapes against
+DUPR's current API) or simply unused — every real call in this app was already
+a raw `client.session.get/post/put(url, ...)`, not a `client.matches.save(...)`-
+style wrapper call. So the dependency bought nothing, while still being a
+piece of code from an unrelated party sitting between this app and your DUPR
+login — a bad trade for a tool that logs in with your credentials. It's gone:
+`dupr_session.py` now builds a plain `requests.Session` itself, and everything
+talks to DUPR directly:
 
 ```python
-from dupr_session import make_client
+from dupr_session import BASE_URL, make_client
 
 client = make_client()
-client.user.get_profile()
-client.players.search_players(query="Jane Doe")
-client.matches.get_pending_matches()
+r = client.session.get(f"{BASE_URL}/user/v1.0/profile")
+r.raise_for_status()
+print(r.json()["result"])
 ```
 
-Resources: `client.user`, `.players`, `.matches`, `.clubs`, `.events`,
-`.brackets`, `.admin` — see the [upstream repo](https://github.com/offsetkeyz/dupr-api-client)
-for the full method list (note: some endpoints there are stale against DUPR's
-current API — see point 1 above).
+Endpoints this app actually calls, confirmed working (see `match_app.py` and
+`stats.py`):
+
+| Endpoint | Used for |
+|---|---|
+| `GET /user/v1.0/profile` | who's logged in |
+| `POST /player/v1.0/search` | roster player search |
+| `GET /player/v1.0/{id}` | a player's current rating (for Predict a Matchup) |
+| `POST /club/{clubId}/roles/v1.0/permission` | can this user submit verified club matches? |
+| `PUT /club/{clubId}/match/verified/v1.0/save/csv/add` | verified match submission (CSV upload) |
+| `PUT /match/v1.0/save` | player-reported match submission (fallback) |
+| `POST /club/match/v1.0/history` | match history for Stats & Analytics |
+
+None of these are officially documented by DUPR — they were found by
+intercepting DUPR's own web app's traffic (see "How match submission works"
+above), so treat them as liable to change without notice, same as before.

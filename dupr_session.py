@@ -1,4 +1,11 @@
-"""Build a ready-to-use DUPRClient for this laptop.
+"""Build a ready-to-use DUPR API session for this laptop.
+
+This is a plain `requests.Session` with DUPR's auth cookie attached -- no
+third-party DUPR client library. We never used the offsetkeyz/dupr-api-client
+package for anything but its `requests.Session` (its own request-building
+methods were unreliable anyway -- see README's "why no client library"
+section), so it was a dependency for zero actual benefit, and one this app
+doesn't need to trust going forward.
 
 Two local quirks this handles:
 
@@ -13,22 +20,34 @@ Two local quirks this handles:
 Usage:
     from dupr_session import make_client
     client = make_client()
-    print(client.user.get_profile())
+    print(client.session.get("https://api.dupr.com/user/v1.0/profile").json())
 """
 
 import os
 from pathlib import Path
 
+import requests
 import truststore
 
 truststore.inject_into_ssl()  # must happen before requests opens any connection
 
-from dupr_api import DUPRClient  # noqa: E402
-
 BASE_URL = "https://api.dupr.com"
 API_HOST = "api.dupr.com"
 AT_COOKIE = "__Host-dupr_at"
+RT_COOKIE = "__Host-dupr_rt"
 ENV_PATH = Path(__file__).with_name(".env")
+
+
+class DuprClient:
+    """Bare-minimum stand-in for a "DUPR API client": just a requests.Session
+    with the right cookies set. Every call site does its own
+    `client.session.get/post/put(url, ...)` with the full DUPR URL -- there's
+    no request-building or endpoint-wrapping layer to trust here, so there's
+    nothing hidden going on between you and the raw HTTP call."""
+
+    def __init__(self):
+        self.session = requests.Session()
+        self.base_url = BASE_URL
 
 
 def _read_env_file() -> dict:
@@ -52,7 +71,7 @@ def get_token() -> str | None:
     return os.environ.get("DUPR_BEARER_TOKEN") or _read_env_file().get("DUPR_BEARER_TOKEN")
 
 
-def make_client() -> DUPRClient:
+def make_client() -> DuprClient:
     env = _read_env_file()
     token = os.environ.get("DUPR_BEARER_TOKEN") or env.get("DUPR_BEARER_TOKEN")
     if not token:
@@ -60,12 +79,10 @@ def make_client() -> DUPRClient:
             "No token found. Run:  .venv\\Scripts\\python.exe get_token.py"
         )
 
-    client = DUPRClient(base_url=BASE_URL, version="v1.0")
+    client = DuprClient()
     client.session.cookies.set(AT_COOKIE, token, domain=API_HOST, secure=True)
 
     refresh = os.environ.get("DUPR_REFRESH_TOKEN") or env.get("DUPR_REFRESH_TOKEN")
     if refresh:
-        client.session.cookies.set(
-            "__Host-dupr_rt", refresh, domain=API_HOST, secure=True
-        )
+        client.session.cookies.set(RT_COOKIE, refresh, domain=API_HOST, secure=True)
     return client
