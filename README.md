@@ -23,11 +23,18 @@ dependencies and log in.)
   search shows DUPR ID + rating so you can tell same-named players apart —
   DUPR has some duplicate/unclaimed profiles (more than one profile can exist
   under the same name).
-- **This Week**: pick the date, then click **+ Add Match** for each match —
-  it jumps focus straight to the new match's first player field, so a whole
-  week can be entered from the keyboard without reaching for the mouse. Each
-  match has 2 players per team (Team A / Team B), 1–5 games, and leaving a
-  team's 2nd player as "— none —" makes it singles.
+- **This Week**: pick a default date, then click **+ Add Match** for each
+  match — it jumps focus straight to the new match's first player field, so a
+  whole week can be entered from the keyboard without reaching for the mouse.
+  Each match has its own date (defaults to the one above, editable per match),
+  2 players per team (Team A / Team B), 1–5 games, and leaving a team's 2nd
+  player as "— none —" makes it singles.
+- **Import CSV** loads matches from a CSV in the same 27-column format
+  **Download CSV** produces — either your own previously-downloaded file, a
+  spreadsheet of results you've kept, or a batch of test data — instead of
+  clicking through the form for each one. Players are matched to your roster
+  by DUPR ID (or by exact name if there's no ID column); rows with a player
+  it can't match are skipped and listed in a summary.
 - **Preview** builds the exact payload that would be sent to DUPR and shows
   it — this never contacts DUPR.
 - **Download CSV** produces a file in DUPR's own "Import Matches" format
@@ -45,9 +52,21 @@ ways to check what would be sent before anything goes live.
 
 ## Stats & Analytics
 
-A card at the bottom of the app, updated on demand — click **Refresh Stats**
-to pull your league's full match history from DUPR (scoped to the event name
-in Season Setup) and compute:
+A card at the bottom of the app, in two parts:
+
+**Team Records — Matches Entered Above.** Computed instantly and locally from
+whatever's currently in "This Week" (typed by hand or loaded with Import
+CSV) — no DUPR call, no button to press, it just updates as you type. Shows
+each pairing's wins/losses/draws, win%, and **points for/against** (a
+tie-breaker DUPR itself doesn't surface). Since a "team" here is just
+whichever two players are on a match, it keeps tracking a pairing's record
+correctly even across weeks where a sub fills in for one game and someone
+else fills in for another — each combination gets its own row.
+
+**DUPR Match History**, updated on demand — click **Refresh Stats** to pull
+your league's full match history *from DUPR* (scoped to the event name in
+Season Setup, which can span far more matches than what's currently in "This
+Week") and compute:
 
 - **Fun facts** — closest match, biggest blowout, most matches played
   together, best record, current hot streak, most active player, biggest

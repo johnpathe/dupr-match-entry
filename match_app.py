@@ -166,8 +166,10 @@ def player_info(players_by_id, id_):
     return (p["name"], p.get("duprId", "")) if p else ("", "")
 
 
-def build_csv_text(event, location, date, players_by_id, matches_req):
-    """The same 27-column format as DUPR's own Import Matches template."""
+def build_csv_text(event, location, default_date, players_by_id, matches_req):
+    """The same 27-column format as DUPR's own Import Matches template.
+    Each match may carry its own date (e.g. from an imported multi-week CSV);
+    default_date covers matches that don't specify one."""
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(CSV_HEADER)
@@ -183,7 +185,7 @@ def build_csv_text(event, location, date, players_by_id, matches_req):
         for i in range(5):
             game_cells += [games[i][0], games[i][1]] if i < len(games) else ["", ""]
         w.writerow([
-            "D" if (len(t1) > 1 or len(t2) > 1) else "S", event, date,
+            "D" if (len(t1) > 1 or len(t2) > 1) else "S", event, m.get("date") or default_date,
             a1n, a1d, "", a2n, a2d, "", b1n, b1d, "", b2n, b2d, "",
             *game_cells, location, "SIDEOUT",
         ])
@@ -193,16 +195,16 @@ def build_csv_text(event, location, date, players_by_id, matches_req):
 def _build_from_request(body, roster):
     event = body.get("event") or roster["eventName"]
     location = body.get("location") or roster["location"]
-    date = body["date"]
+    default_date = body.get("date")
     club_id = roster.get("clubId")
     payloads = []
     for m in body["matches"]:
         games = [[int(g[0]), int(g[1])] for g in m["games"] if g[0] != "" and g[1] != ""]
         payloads.append(build_match_payload(
-            event, location, date, club_id,
+            event, location, m.get("date") or default_date, club_id,
             [int(x) for x in m["team1"]], [int(x) for x in m["team2"]], games,
         ))
-    return payloads, event, location, date
+    return payloads, event, location, default_date
 
 
 # ------------------------------------------------------------------- routes

@@ -162,12 +162,17 @@
     <h2>This Week</h2>
     <div class="row">
       <div style="max-width:200px">
-        <label>Date</label>
+        <label>Date for new matches</label>
         <input type="date" id="matchDate">
       </div>
     </div>
     <div id="matches"></div>
-    <button class="btn secondary" onclick="addMatch()">+ Add Match</button>
+    <div class="actions-row">
+      <button class="btn secondary" onclick="addMatch()">+ Add Match</button>
+      <button class="btn secondary" onclick="document.getElementById('csvImportFile').click()">Import CSV</button>
+      <input type="file" accept=".csv" id="csvImportFile" style="display:none">
+    </div>
+    <p class="hint">Import CSV reads the same 27-column format Download CSV produces (below) — handy for loading a whole batch of results (or test data) at once instead of clicking through the form.</p>
   </div>
 
   <div class="card">
@@ -184,6 +189,18 @@
 
   <div class="card">
     <h2>Stats &amp; Analytics</h2>
+
+    <h3 class="subhead" style="margin-top:0">Team Records — Matches Entered Above <span class="hint">(win / loss / draw)</span></h3>
+    <p class="hint">
+      Computed live from the match cards in "This Week" above (typed in by
+      hand or loaded with Import CSV) — nothing is fetched from DUPR for this
+      table, so it updates instantly and works for tracking a team's record
+      even if a sub fills in some weeks (a "team" here is whichever two
+      players are paired in a given match).
+    </p>
+    <div class="table-scroll"><table class="stats-table" id="localTeamTable"></table></div>
+
+    <h3 class="subhead">DUPR Match History</h3>
     <div class="actions-row">
       <button class="btn" onclick="refreshStats()">Refresh Stats</button>
       <span class="hint" id="statsSummary">Not loaded yet — click Refresh Stats to pull your league's match history from DUPR.</span>
@@ -401,6 +418,7 @@ function addMatch() {
   const id = ++matchSeq;
   matches.push({
     id,
+    date: document.getElementById("matchDate").value,
     team1: [null, null],
     team2: [null, null],
     games: [["", ""]],
@@ -440,6 +458,7 @@ function renderMatches() {
     el.appendChild(card);
     renderMatch(m.id);
   });
+  renderLocalTeamStats();
 }
 
 function renderMatch(id) {
@@ -474,6 +493,7 @@ function renderMatch(id) {
   card.innerHTML = `
     <div class="top">
       <strong>Match</strong>
+      <input type="date" value="${m.date || ""}" style="width:auto" onchange="setMatchDate(${id}, this.value)">
       <button class="btn danger-outline" onclick="removeMatch(${id})">Remove match</button>
     </div>
     <div class="teams-row">
@@ -495,25 +515,32 @@ function renderMatch(id) {
 function setTeamPlayer(id, teamKey, slot, value) {
   const m = matches.find(x => x.id === id);
   m[teamKey][slot] = value || null;
+  renderLocalTeamStats();
 }
 
 function setGameScore(id, gameIdx, slot, value) {
   const m = matches.find(x => x.id === id);
   m.games[gameIdx][slot] = value;
+  renderLocalTeamStats();
+}
+
+function setMatchDate(id, value) {
+  const m = matches.find(x => x.id === id);
+  m.date = value;
 }
 
 function buildRequestBody() {
-  const date = document.getElementById("matchDate").value;
+  const defaultDate = document.getElementById("matchDate").value;
   const payloadMatches = matches.map(m => {
     const team1 = m.team1.filter(Boolean);
     const team2 = m.team2.filter(Boolean);
     const games = m.games.filter(g => g[0] !== "" && g[1] !== "");
-    return { team1, team2, games };
+    return { team1, team2, games, date: m.date || defaultDate };
   });
   return {
     event: document.getElementById("eventName").value,
     location: document.getElementById("location").value,
-    date,
+    date: defaultDate,
     matches: payloadMatches,
   };
 }
@@ -597,7 +624,7 @@ function playerInfo(id) {
 }
 
 function buildCsvRows() {
-  const date = document.getElementById("matchDate").value;
+  const defaultDate = document.getElementById("matchDate").value;
   const event = document.getElementById("eventName").value;
   const location = document.getElementById("location").value;
   const rows = [];
@@ -613,7 +640,7 @@ function buildCsvRows() {
       gameCells.push(games[i] ? games[i][0] : "", games[i] ? games[i][1] : "");
     }
     rows.push([
-      (t1.length > 1 || t2.length > 1) ? "D" : "S", event, date,
+      (t1.length > 1 || t2.length > 1) ? "D" : "S", event, m.date || defaultDate,
       a1.name, a1.duprId, "",
       a2.name, a2.duprId, "",
       b1.name, b1.duprId, "",
@@ -623,6 +650,181 @@ function buildCsvRows() {
     ]);
   });
   return rows;
+}
+
+// ------------------------------------------------------------------- CSV import
+
+function parseCsv(text) {
+  const rows = [];
+  let row = [], field = "", inQuotes = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else {
+        field += c;
+      }
+    } else if (c === '"') {
+      inQuotes = true;
+    } else if (c === ',') {
+      row.push(field); field = "";
+    } else if (c === '\r') {
+      // skip
+    } else if (c === '\n') {
+      row.push(field); rows.push(row); row = []; field = "";
+    } else {
+      field += c;
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows.filter(r => r.length > 1 || r[0] !== "");
+}
+
+function findRosterPlayer(name, duprId) {
+  if (duprId) {
+    const byId = roster.players.find(p => (p.duprId || "").toUpperCase() === duprId.toUpperCase());
+    if (byId) return byId;
+  }
+  if (name) {
+    const byName = roster.players.find(p => p.name.trim().toLowerCase() === name.trim().toLowerCase());
+    if (byName) return byName;
+  }
+  return null;
+}
+
+function importCsvText(text) {
+  const rows = parseCsv(text);
+  if (rows.length < 2) { alert("That CSV has no data rows."); return; }
+  const header = rows[0].map(h => h.trim());
+  const col = name => header.indexOf(name);
+  const iDate = col("date");
+  const iA1 = col("playerA1"), iA1D = col("playerA1DuprId");
+  const iA2 = col("playerA2"), iA2D = col("playerA2DuprId");
+  const iB1 = col("playerB1"), iB1D = col("playerB1DuprId");
+  const iB2 = col("playerB2"), iB2D = col("playerB2DuprId");
+  if ([iA1, iA1D, iB1, iB1D].some(i => i < 0)) {
+    alert("This doesn't look like the Download CSV format — missing expected columns (playerA1, playerA1DuprId, playerB1, playerB1DuprId).");
+    return;
+  }
+  const gameCol = n => [col(`teamAGame${n}`), col(`teamBGame${n}`)];
+  const defaultDate = document.getElementById("matchDate").value;
+
+  let imported = 0;
+  const unknown = new Set();
+  const newMatches = [];
+  for (let r = 1; r < rows.length; r++) {
+    const row = rows[r];
+    if (!row || row.every(c => (c || "").trim() === "")) continue;
+    const a1 = findRosterPlayer(row[iA1], row[iA1D]);
+    const a2 = row[iA2] ? findRosterPlayer(row[iA2], row[iA2D]) : null;
+    const b1 = findRosterPlayer(row[iB1], row[iB1D]);
+    const b2 = row[iB2] ? findRosterPlayer(row[iB2], row[iB2D]) : null;
+    if (!a1) unknown.add(row[iA1]);
+    if (row[iA2] && !a2) unknown.add(row[iA2]);
+    if (!b1) unknown.add(row[iB1]);
+    if (row[iB2] && !b2) unknown.add(row[iB2]);
+    if (!a1 || !b1) continue;
+
+    const games = [];
+    for (let g = 1; g <= 5; g++) {
+      const [gi1, gi2] = gameCol(g);
+      const v1 = gi1 >= 0 ? row[gi1] : "", v2 = gi2 >= 0 ? row[gi2] : "";
+      if (v1 !== "" && v2 !== "" && v1 != null && v2 != null) games.push([v1, v2]);
+    }
+    newMatches.push({
+      id: ++matchSeq,
+      date: (iDate >= 0 && row[iDate]) ? row[iDate] : defaultDate,
+      team1: [String(a1.id), a2 ? String(a2.id) : null],
+      team2: [String(b1.id), b2 ? String(b2.id) : null],
+      games: games.length ? games : [["", ""]],
+    });
+    imported++;
+  }
+
+  matches = matches.concat(newMatches);
+  renderMatches();
+
+  let msg = `Imported ${imported} match${imported === 1 ? "" : "es"}.`;
+  const unknownList = [...unknown].filter(Boolean);
+  if (unknownList.length) {
+    msg += `\n\nSkipped row(s) with players not in your roster: ${unknownList.join(", ")}. `
+         + `Add them via Season Setup's player search (matched by DUPR ID, or by exact name if no DUPR ID column) and re-import.`;
+  }
+  alert(msg);
+}
+
+document.getElementById("csvImportFile").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  e.target.value = ""; // allow re-importing the same file later
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => importCsvText(String(reader.result));
+  reader.readAsText(file);
+});
+
+// -------------------------------------------------------- local team records
+
+function computeLocalTeamStats() {
+  const teamMap = {};
+  matches.forEach(m => {
+    const t1 = m.team1.filter(Boolean).map(String);
+    const t2 = m.team2.filter(Boolean).map(String);
+    if (!t1.length || !t2.length) return;
+    const games = m.games.filter(g => g[0] !== "" && g[1] !== "" && g[0] != null && g[1] != null);
+    if (!games.length) return;
+    const pts1 = games.reduce((s, g) => s + Number(g[0]), 0);
+    const pts2 = games.reduce((s, g) => s + Number(g[1]), 0);
+    const wins1 = games.filter(g => Number(g[0]) > Number(g[1])).length;
+    const wins2 = games.filter(g => Number(g[1]) > Number(g[0])).length;
+    const outcome1 = wins1 > wins2 ? "win" : wins2 > wins1 ? "loss" : "draw";
+    const outcome2 = outcome1 === "win" ? "loss" : outcome1 === "loss" ? "win" : "draw";
+
+    [[t1, outcome1, pts1, pts2], [t2, outcome2, pts2, pts1]].forEach(([ids, outcome, pf, pa]) => {
+      const key = ids.slice().sort().join(",");
+      if (!teamMap[key]) {
+        teamMap[key] = {ids, wins: 0, losses: 0, draws: 0, pointsFor: 0, pointsAgainst: 0};
+      }
+      teamMap[key][outcome === "win" ? "wins" : outcome === "loss" ? "losses" : "draws"] += 1;
+      teamMap[key].pointsFor += pf;
+      teamMap[key].pointsAgainst += pa;
+    });
+  });
+
+  return Object.values(teamMap).map(t => {
+    const total = t.wins + t.losses + t.draws;
+    const name = t.ids.map(id => {
+      const p = roster.players.find(x => String(x.id) === id);
+      return p ? p.name : `#${id}`;
+    }).join(" & ");
+    return {
+      name, matches: total, wins: t.wins, losses: t.losses, draws: t.draws,
+      winPct: total ? Math.round(1000 * t.wins / total) / 10 : 0,
+      pointsFor: t.pointsFor, pointsAgainst: t.pointsAgainst,
+      avgMargin: total ? Math.round(10 * (t.pointsFor - t.pointsAgainst) / total) / 10 : 0,
+    };
+  }).sort((a, b) => b.winPct - a.winPct || b.matches - a.matches);
+}
+
+function renderLocalTeamStats() {
+  const el = document.getElementById("localTeamTable");
+  if (!el) return;
+  const teams = computeLocalTeamStats();
+  if (!teams.length) {
+    el.innerHTML = `<tr><td>Add match results above (or use Import CSV) to see team records here.</td></tr>`;
+    return;
+  }
+  el.innerHTML = `
+    <tr><th>Team</th><th>W</th><th>L</th><th>D</th><th>Win%</th><th>Pts For</th><th>Pts Against</th><th>Avg Margin</th></tr>
+    ${teams.map(t => `
+      <tr>
+        <td>${escapeHtml(t.name)}</td>
+        <td>${t.wins}</td><td>${t.losses}</td><td>${t.draws}</td>
+        <td>${t.winPct}%</td>
+        <td>${t.pointsFor}</td><td>${t.pointsAgainst}</td>
+        <td>${t.avgMargin > 0 ? "+" : ""}${t.avgMargin}</td>
+      </tr>`).join("")}`;
 }
 
 function downloadCsv() {
