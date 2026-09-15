@@ -99,6 +99,25 @@
   }
   .badge.verified { background: var(--ok-bg); color: var(--ok); }
   .badge.fallback { background: var(--warn-bg); color: var(--warn); }
+
+  .subhead { font-size: 12.5px; text-transform: uppercase; letter-spacing: .03em; color: var(--muted); margin: 16px 0 6px; }
+  .subhead:first-of-type { margin-top: 4px; }
+  .facts { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; margin-bottom: 4px; }
+  .fact-card { background: #eef2f8; border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; }
+  .fact-card .flabel { font-size: 10.5px; text-transform: uppercase; color: var(--muted); letter-spacing: .03em; }
+  .fact-card .fvalue { font-size: 13px; font-weight: 600; margin-top: 2px; }
+  .table-scroll { overflow-x: auto; }
+  table.stats-table { border-collapse: collapse; width: 100%; font-size: 12.5px; white-space: nowrap; }
+  table.stats-table th, table.stats-table td { padding: 5px 8px; text-align: right; border-bottom: 1px solid var(--border); }
+  table.stats-table th:first-child, table.stats-table td:first-child { text-align: left; }
+  table.stats-table th { color: var(--muted); font-weight: 600; font-size: 11px; text-transform: uppercase; }
+  table.stats-table tr:hover td { background: #f6f8fb; }
+  .streak-W { color: var(--ok); font-weight: 700; }
+  .streak-L { color: var(--danger); font-weight: 700; }
+  .predict-box { display: flex; gap: 18px; flex-wrap: wrap; margin-top: 8px; }
+  .predict-box .side { flex: 1; min-width: 160px; background: #eef2f8; border-radius: 8px; padding: 10px 12px; }
+  .predict-box .pct { font-size: 22px; font-weight: 700; }
+  .predict-box .swing { font-size: 12.5px; color: var(--muted); margin-top: 4px; }
 </style>
 </head>
 <body>
@@ -161,6 +180,52 @@
     <p class="hint" id="modeHint"></p>
     <pre id="previewBox">(click Preview to see exactly what would be sent)</pre>
     <div class="results" id="results"></div>
+  </div>
+
+  <div class="card">
+    <h2>Stats &amp; Analytics</h2>
+    <div class="actions-row">
+      <button class="btn" onclick="refreshStats()">Refresh Stats</button>
+      <span class="hint" id="statsSummary">Not loaded yet — click Refresh Stats to pull your league's match history from DUPR.</span>
+    </div>
+    <div id="statsBody" style="display:none">
+
+      <h3 class="subhead">Fun Facts</h3>
+      <div class="facts" id="statsFacts"></div>
+
+      <h3 class="subhead">Team Records <span class="hint">(win / loss / draw)</span></h3>
+      <div class="table-scroll"><table class="stats-table" id="teamTable"></table></div>
+
+      <h3 class="subhead">Player Records</h3>
+      <div class="table-scroll"><table class="stats-table" id="playerTable"></table></div>
+
+      <h3 class="subhead">Predict a Matchup</h3>
+      <p class="hint">
+        Estimated only — DUPR doesn't publish a prediction API. This uses a
+        standard rating-difference model, with the typical rating swing
+        calibrated from your own league's actual recorded rating changes.
+      </p>
+      <div class="teams-row">
+        <div class="team-block">
+          <h4>Team A</h4>
+          <div class="team-cols">
+            <div><select id="predA1"></select></div>
+            <div><select id="predA2"></select></div>
+          </div>
+        </div>
+        <div class="team-block">
+          <h4>Team B</h4>
+          <div class="team-cols">
+            <div><select id="predB1"></select></div>
+            <div><select id="predB2"></select></div>
+          </div>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button class="btn secondary" onclick="doPredict()">Predict</button>
+      </div>
+      <div id="predictResult"></div>
+    </div>
   </div>
 </div>
 
@@ -258,6 +323,14 @@ function renderRosterChips() {
       renderAllTeamSelects();
     };
     el.appendChild(chip);
+  });
+  renderPredictSelects();
+}
+
+function renderPredictSelects() {
+  ["predA1", "predA2", "predB1", "predB2"].forEach(id => {
+    const sel = document.getElementById(id);
+    if (sel) sel.innerHTML = playerOptionsHtml(null);
   });
 }
 
@@ -569,6 +642,113 @@ function downloadCsv() {
   a.click();
   a.remove();
   URL.revokeObjectURL(url);
+}
+
+// ------------------------------------------------------------ stats/analytics
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+async function refreshStats() {
+  const summary = document.getElementById("statsSummary");
+  const body = document.getElementById("statsBody");
+  summary.textContent = "Loading…";
+  let data;
+  try {
+    data = await (await fetch("/api/stats")).json();
+  } catch (e) {
+    summary.textContent = "Could not reach the local server.";
+    return;
+  }
+  if (data.error) {
+    summary.textContent = data.error;
+    body.style.display = "none";
+    return;
+  }
+  summary.textContent = `${data.matchCount} matches` +
+    (data.dateRange ? ` from ${data.dateRange[0]} to ${data.dateRange[1]}` : "") +
+    ` — as of ${new Date().toLocaleTimeString()}`;
+  body.style.display = "";
+  renderFacts(data.facts);
+  renderTeamTable(data.teams);
+  renderPlayerTable(data.players);
+}
+
+function renderFacts(facts) {
+  const el = document.getElementById("statsFacts");
+  el.innerHTML = (facts || []).map(f => `
+    <div class="fact-card">
+      <div class="flabel">${escapeHtml(f.label)}</div>
+      <div class="fvalue">${escapeHtml(f.value)}</div>
+    </div>`).join("") || `<span class="hint">Not enough data yet.</span>`;
+}
+
+function streakCell(row) {
+  const cls = row.streakType === "W" ? "streak-W" : row.streakType === "L" ? "streak-L" : "";
+  return `<td class="${cls}">${escapeHtml(row.streakLabel)}</td>`;
+}
+
+function renderTeamTable(teams) {
+  const el = document.getElementById("teamTable");
+  if (!teams || !teams.length) { el.innerHTML = `<tr><td>No completed matches yet.</td></tr>`; return; }
+  el.innerHTML = `
+    <tr><th>Team</th><th>W</th><th>L</th><th>D</th><th>Win%</th><th>Pts For</th><th>Pts Against</th><th>Avg Margin</th><th>Streak</th></tr>
+    ${teams.map(t => `
+      <tr>
+        <td>${escapeHtml(t.name)}</td>
+        <td>${t.wins}</td><td>${t.losses}</td><td>${t.draws}</td>
+        <td>${t.winPct}%</td>
+        <td>${t.pointsFor}</td><td>${t.pointsAgainst}</td>
+        <td>${t.avgMargin > 0 ? "+" : ""}${t.avgMargin}</td>
+        ${streakCell(t)}
+      </tr>`).join("")}`;
+}
+
+function renderPlayerTable(players) {
+  const el = document.getElementById("playerTable");
+  if (!players || !players.length) { el.innerHTML = `<tr><td>No completed matches yet.</td></tr>`; return; }
+  el.innerHTML = `
+    <tr><th>Player</th><th>W</th><th>L</th><th>D</th><th>Win%</th><th>Rating Trend</th><th>Streak</th></tr>
+    ${players.map(p => `
+      <tr>
+        <td>${escapeHtml(p.name)}</td>
+        <td>${p.wins}</td><td>${p.losses}</td><td>${p.draws}</td>
+        <td>${p.winPct}%</td>
+        <td>${p.ratingTrend == null ? "—" : (p.ratingTrend > 0 ? "+" : "") + p.ratingTrend}</td>
+        ${streakCell(p)}
+      </tr>`).join("")}`;
+}
+
+async function doPredict() {
+  const teamA = [document.getElementById("predA1").value, document.getElementById("predA2").value].filter(Boolean);
+  const teamB = [document.getElementById("predB1").value, document.getElementById("predB2").value].filter(Boolean);
+  const box = document.getElementById("predictResult");
+  if (!teamA.length || !teamB.length) {
+    box.innerHTML = `<p class="hint">Pick at least one player for each team.</p>`;
+    return;
+  }
+  box.innerHTML = `<p class="hint">Predicting…</p>`;
+  const r = await fetch("/api/predict", {method: "POST", headers: {"Content-Type": "application/json"},
+                                          body: JSON.stringify({teamA, teamB})});
+  const data = await r.json();
+  if (data.error) { box.innerHTML = `<p class="hint">${escapeHtml(data.error)}</p>`; return; }
+  box.innerHTML = `
+    <div class="predict-box">
+      <div class="side">
+        <div>Team A (avg rating ${data.teamA.avgRating})</div>
+        <div class="pct">${data.teamA.winProbability}% to win</div>
+        <div class="swing">If A wins: ${data.ifTeamAWins.teamA > 0 ? "+" : ""}${data.ifTeamAWins.teamA} pts<br>
+                             If A loses: ${data.ifTeamBWins.teamA} pts</div>
+      </div>
+      <div class="side">
+        <div>Team B (avg rating ${data.teamB.avgRating})</div>
+        <div class="pct">${data.teamB.winProbability}% to win</div>
+        <div class="swing">If B wins: ${data.ifTeamBWins.teamB > 0 ? "+" : ""}${data.ifTeamBWins.teamB} pts<br>
+                             If B loses: ${data.ifTeamAWins.teamB} pts</div>
+      </div>
+    </div>
+    <p class="hint">${escapeHtml(data.note)}</p>`;
 }
 
 // init

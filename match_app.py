@@ -37,6 +37,7 @@ from pathlib import Path
 from flask import Flask, jsonify, request, send_from_directory
 
 from dupr_session import make_client
+import stats as stats_mod
 
 HERE = Path(__file__).parent
 ROSTER_PATH = HERE / "roster.json"
@@ -249,6 +250,54 @@ def relogin():
             [sys.executable, str(HERE / "get_token.py")], cwd=str(HERE)
         )
     return jsonify({"started": not already_running, "alreadyRunning": already_running})
+
+
+_stats_cache = {"key": None, "matches": None}
+
+
+def get_club_matches(client, club_id, event_name, force=False):
+    """Cached by (club_id, event_name) so /api/predict doesn't have to
+    re-fetch the whole match history on every call -- only /api/stats
+    (the "Refresh Stats" button) forces a live re-fetch."""
+    key = (club_id, event_name)
+    if force or _stats_cache["key"] != key or _stats_cache["matches"] is None:
+        _stats_cache["matches"] = stats_mod.fetch_club_matches(client, club_id, event_name)
+        _stats_cache["key"] = key
+    return _stats_cache["matches"]
+
+
+@app.route("/api/stats")
+def get_stats():
+    roster = load_roster()
+    club_id = roster.get("clubId")
+    if not club_id:
+        return jsonify({"error": "Set a Club ID in Season Setup first."}), 400
+    client = make_client()
+    try:
+        matches = get_club_matches(client, club_id, roster.get("eventName"), force=True)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 502
+    return jsonify(stats_mod.compute_stats(matches))
+
+
+@app.route("/api/predict", methods=["POST"])
+def predict():
+    body = request.get_json(force=True)
+    roster = load_roster()
+    club_id = roster.get("clubId")
+    client = make_client()
+    try:
+        matches = get_club_matches(client, club_id, roster.get("eventName")) if club_id else []
+    except Exception:
+        matches = []
+    try:
+        team_a = [int(x) for x in body["teamA"] if x]
+        team_b = [int(x) for x in body["teamB"] if x]
+    except (KeyError, ValueError, TypeError):
+        return jsonify({"error": "Pick at least one player for each team."}), 400
+    if not team_a or not team_b:
+        return jsonify({"error": "Pick at least one player for each team."}), 400
+    return jsonify(stats_mod.predict_matchup(client, team_a, team_b, matches))
 
 
 @app.route("/api/search_players")

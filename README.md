@@ -43,6 +43,32 @@ DUPR has no sandbox/staging environment (checked — no `staging`/`uat`/`sandbox
 subdomain resolves at all), so **Preview** and **Download CSV** are the safe
 ways to check what would be sent before anything goes live.
 
+## Stats & Analytics
+
+A card at the bottom of the app, updated on demand — click **Refresh Stats**
+to pull your league's full match history from DUPR (scoped to the event name
+in Season Setup) and compute:
+
+- **Fun facts** — closest match, biggest blowout, most matches played
+  together, best record, current hot streak, most active player, biggest
+  rating climb.
+- **Team records** — wins/losses/draws, win%, points for/against, average
+  margin, and current streak for every pairing that's played.
+- **Player records** — the same, per player, plus a rating trend over the
+  period (first vs. last observed rating in your match history).
+- **Predict a Matchup** — pick two players per side and get a win-probability
+  estimate and expected rating-point swing.
+
+On the predictor: DUPR does not expose a public prediction endpoint. The
+community client library documents one (`POST /match/v1.0/expected-score`),
+but every payload shape tried against it returns a generic 400, and DUPR's own
+"New Match" page never calls it either while you fill in two full teams — no
+live reference exists to reverse-engineer it from. So the predictor uses a
+standard rating-difference win-probability model instead, with its "typical
+point swing" calibrated from *your own league's* actual recorded rating
+changes rather than a guess — and it says so in its own output, since it is
+an estimate, not DUPR's real (undisclosed) algorithm.
+
 ## Verified (no-confirmation) vs. player-reported matches
 
 DUPR has two different ways a match gets recorded, and this app checks which
@@ -93,6 +119,7 @@ stays on your machine the same way.
 |------|------------|
 | `Start Match Entry App.bat` | Double-click to start the server and open the app |
 | `match_app.py` / `match_app.html` | The match-entry web app (Flask backend + single-page frontend) |
+| `stats.py` | Stats & Analytics: fetches club match history and computes team/player records, fun facts, and the matchup predictor |
 | `roster.example.json` | Generic template — copy to `roster.json` and fill in your own roster |
 | `roster.json` | **Not tracked in git.** Your real event name, location, club ID, and players |
 | `get_token.py` | Logs in via a real browser once, saves your DUPR session token |
