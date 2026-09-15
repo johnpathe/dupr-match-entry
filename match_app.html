@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>DUPR Match Entry</title>
+<title>Pickle League Ledger</title>
 <style>
   :root {
     --bg: #f4f6f9; --card: #ffffff; --border: #dde3ea; --text: #1c2530;
@@ -16,8 +16,7 @@
     background: var(--bg); color: var(--text); padding: 18px;
   }
   .wrap { max-width: 980px; margin: 0 auto; }
-  h1 { font-size: 21px; margin: 0 0 2px; }
-  .sub { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
+  h1 { font-size: 21px; margin: 0 0 12px; }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
     padding: 14px 16px; margin-bottom: 12px;
@@ -73,10 +72,10 @@
   .team-block h4 { margin: 0 0 5px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
   .team-cols { display: flex; gap: 6px; }
   .team-cols > div { flex: 1; }
-  .score-table { display: grid; grid-template-columns: 74px repeat(5, 1fr); gap: 5px; align-items: center; margin-top: 4px; }
+  .score-table { display: grid; grid-template-columns: 58px repeat(5, 48px); justify-content: start; gap: 8px 10px; align-items: center; margin-top: 4px; }
   .score-table .head { font-size: 11px; color: var(--muted); text-align: center; }
   .score-table .row-label { font-size: 11.5px; font-weight: 600; color: var(--text); white-space: nowrap; }
-  .score-table input { text-align: center; padding: 5px; }
+  .score-table input { width: 100%; text-align: center; padding: 5px 2px; }
   .actions-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
   pre#previewBox {
     background: #10151d; color: #cfe3ff; padding: 12px; border-radius: 8px;
@@ -122,8 +121,7 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>DUPR Match Entry</h1>
-  <p class="sub">Local tool — nothing reaches DUPR until you click <b>Submit to DUPR</b> and confirm.</p>
+  <h1>Pickle League Ledger</h1>
 
   <div id="authBanner"></div>
 
@@ -201,6 +199,16 @@
     <div class="table-scroll"><table class="stats-table" id="localTeamTable"></table></div>
 
     <h3 class="subhead">DUPR Match History</h3>
+    <div class="row">
+      <div style="max-width:170px">
+        <label>From (optional)</label>
+        <input type="date" id="statsFrom">
+      </div>
+      <div style="max-width:170px">
+        <label>To (optional)</label>
+        <input type="date" id="statsTo">
+      </div>
+    </div>
     <div class="actions-row">
       <button class="btn" onclick="refreshStats()">Refresh Stats</button>
       <span class="hint" id="statsSummary">Not loaded yet — click Refresh Stats to pull your league's match history from DUPR.</span>
@@ -856,9 +864,14 @@ async function refreshStats() {
   const summary = document.getElementById("statsSummary");
   const body = document.getElementById("statsBody");
   summary.textContent = "Loading…";
+  const from = document.getElementById("statsFrom").value;
+  const to = document.getElementById("statsTo").value;
+  const params = new URLSearchParams();
+  if (from) params.set("from", from);
+  if (to) params.set("to", to);
   let data;
   try {
-    data = await (await fetch("/api/stats")).json();
+    data = await (await fetch("/api/stats?" + params.toString())).json();
   } catch (e) {
     summary.textContent = "Could not reach the local server.";
     return;
@@ -870,6 +883,7 @@ async function refreshStats() {
   }
   summary.textContent = `${data.matchCount} matches` +
     (data.dateRange ? ` from ${data.dateRange[0]} to ${data.dateRange[1]}` : "") +
+    (from || to ? ` (filtered${from ? " from " + from : ""}${to ? " to " + to : ""})` : "") +
     ` — as of ${new Date().toLocaleTimeString()}`;
   body.style.display = "";
   renderFacts(data.facts);

@@ -279,6 +279,15 @@ def get_stats():
         matches = get_club_matches(client, club_id, roster.get("eventName"), force=True)
     except Exception as e:
         return jsonify({"error": str(e)}), 502
+
+    date_from = request.args.get("from") or None
+    date_to = request.args.get("to") or None
+    if date_from or date_to:
+        matches = [
+            m for m in matches
+            if (not date_from or (m.get("eventDate") or "") >= date_from)
+            and (not date_to or (m.get("eventDate") or "") <= date_to)
+        ]
     return jsonify(stats_mod.compute_stats(matches))
 
 

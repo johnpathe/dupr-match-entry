@@ -1,14 +1,14 @@
-# DUPR Match Entry
+# Pickle League Ledger
 
 A local tool for entering weekly pickleball match results to
-[DUPR](https://dupr.com) without retyping the same event, location, and
-player roster every time. Built around
-[offsetkeyz/dupr-api-client](https://github.com/offsetkeyz/dupr-api-client).
+[DUPR](https://dupr.com) and tracking your league's team win/loss records,
+without retyping the same event, location, and player roster every time.
+Built around [offsetkeyz/dupr-api-client](https://github.com/offsetkeyz/dupr-api-client).
 
 ## Quick start
 
-Double-click **`Start Match Entry App.bat`**. It starts the local server and
-opens the app in your browser at <http://127.0.0.1:5057>.
+Double-click **`Start Pickle League Ledger.bat`**. It starts the local server
+and opens the app in your browser at <http://127.0.0.1:5057>.
 
 (First time only — see [First-time setup](#first-time-setup) below to install
 dependencies and log in.)
@@ -63,10 +63,10 @@ whichever two players are on a match, it keeps tracking a pairing's record
 correctly even across weeks where a sub fills in for one game and someone
 else fills in for another — each combination gets its own row.
 
-**DUPR Match History**, updated on demand — click **Refresh Stats** to pull
-your league's full match history *from DUPR* (scoped to the event name in
-Season Setup, which can span far more matches than what's currently in "This
-Week") and compute:
+**DUPR Match History**, updated on demand — optionally set a **From**/**To**
+date range, then click **Refresh Stats** to pull your league's match history
+*from DUPR* (scoped to the event name in Season Setup, which can span far more
+matches than what's currently in "This Week") and compute:
 
 - **Fun facts** — closest match, biggest blowout, most matches played
   together, best record, current hot streak, most active player, biggest
@@ -136,8 +136,8 @@ stays on your machine the same way.
 
 | File | What it is |
 |------|------------|
-| `Start Match Entry App.bat` | Double-click to start the server and open the app |
-| `match_app.py` / `match_app.html` | The match-entry web app (Flask backend + single-page frontend) |
+| `Start Pickle League Ledger.bat` | Double-click to start the server and open the app |
+| `match_app.py` / `match_app.html` | The web app (Flask backend + single-page frontend) |
 | `stats.py` | Stats & Analytics: fetches club match history and computes team/player records, fun facts, and the matchup predictor |
 | `roster.example.json` | Generic template — copy to `roster.json` and fill in your own roster |
 | `roster.json` | **Not tracked in git.** Your real event name, location, club ID, and players |
