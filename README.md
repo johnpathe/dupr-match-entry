@@ -15,27 +15,51 @@ dependencies and log in.)
 
 ## Using the app
 
+- If you're not logged in (or your session expired), a red banner appears at
+  the top with a **Log in with browser** button — click it, log in to DUPR in
+  the Chromium window that opens, and the app picks it back up automatically.
 - **Season Setup** (top card): event name, location, club ID, and your roster
   of regular players. Set this up once per season/competition. The player
   search shows DUPR ID + rating so you can tell same-named players apart —
   DUPR has some duplicate/unclaimed profiles (more than one profile can exist
   under the same name).
-- **This Week**: pick the date, then add a match card per match — 2 players
-  per team for doubles (leave the 2nd slot as "— none —" for singles), and
-  1–5 games per match with each team's score.
-- **Preview JSON** builds the exact payload(s) that would be sent to DUPR and
-  shows them — this never contacts DUPR.
+- **This Week**: pick the date, then click **+ Add Match** for each match —
+  it jumps focus straight to the new match's first player field, so a whole
+  week can be entered from the keyboard without reaching for the mouse. Each
+  match has 2 players per team ("Team 1/A" and "Team 2/B" — DUPR uses both
+  namings depending on where you look, so the app shows both), 1–5 games,
+  and leaving a team's 2nd player as "— none —" makes it singles.
+- **Preview** builds the exact payload that would be sent to DUPR and shows
+  it — this never contacts DUPR.
 - **Download CSV** produces a file in DUPR's own "Import Matches" format
   (Club Overview → Matches → Import Matches → Download Template), in case
   you'd rather upload through DUPR's website yourself instead of using
   Submit here.
-- **Submit to DUPR** sends the matches for real — one request per match —
-  after a confirmation dialog. Results (saved / failed, with DUPR's response)
-  show below.
+- **Submit to DUPR** sends the matches for real, after a confirmation dialog.
+  A badge next to "Preview & Submit" shows which of the two ways DUPR will
+  record them (see below) — results (saved / failed, with DUPR's response)
+  show below the buttons.
 
 DUPR has no sandbox/staging environment (checked — no `staging`/`uat`/`sandbox`
 subdomain resolves at all), so **Preview** and **Download CSV** are the safe
 ways to check what would be sent before anything goes live.
+
+## Verified (no-confirmation) vs. player-reported matches
+
+DUPR has two different ways a match gets recorded, and this app checks which
+one you can use — the same permission check DUPR's own site makes — before
+every Preview and Submit:
+
+- **Verified** — a single upload scoped to a club (this is what DUPR's own
+  "Import Matches" button does). It counts immediately; no player needs to
+  confirm the score. Requires the logged-in user to hold `CLUB_MATCH: ADD`
+  permission on the configured club ID (typically an Organizer/Director role).
+- **Player-reported (fallback)** — one submission per match, DUPR's normal
+  "New Match" flow. Each match sits pending until the other player(s) confirm
+  it. If your role or the configured club ID doesn't qualify for verified
+  submission, the app **falls back to this automatically** and tells you why
+  (visible in the mode badge/hint and in the Preview text), rather than
+  silently submitting matches that then need confirmation you didn't expect.
 
 ## First-time setup
 
@@ -82,7 +106,17 @@ stays on your machine the same way.
 
 ## How match submission works
 
-The payload shape DUPR's "New Match" page actually sends —
+Both request shapes below were reverse-engineered by filling in DUPR's real
+UI in a browser with the actual network request **intercepted and
+faked-successful** (via Playwright's `route()`), so nothing was ever really
+submitted while figuring either of these out.
+
+**Verified** — `PUT /club/{clubId}/match/verified/v1.0/save/csv/add?dateFormat=yyyy-MM-dd`,
+a `multipart/form-data` upload with one field, `request`, containing a CSV in
+DUPR's own 27-column Import Matches format (see `dupr-csv-import-template.csv`).
+This is the exact call DUPR's own "Import Matches" button makes.
+
+**Player-reported (fallback)** — one `PUT /match/v1.0/save` per match:
 ```json
 {
   "event": "...", "eventDate": "YYYY-MM-DD", "location": "...",
@@ -92,11 +126,13 @@ The payload shape DUPR's "New Match" page actually sends —
   "team2": {"...": "same shape"}
 }
 ```
-— was reverse-engineered by filling in the real form in a browser with the
-`PUT /match/v1.0/save` network request **intercepted and faked-successful**,
-so nothing was ever actually submitted while figuring this out. Singles
-(`player2: null`) is untested live but low-risk since the source league is
-mostly doubles.
+Singles (`player2: null`) is untested live but low-risk since the source
+league is mostly doubles.
+
+Both the club-permission check (`POST /club/{clubId}/roles/v1.0/permission`)
+and the auth check (`GET /user/v1.0/profile`) are the same calls DUPR's own
+site makes — `match_app.py`'s `get_submission_mode()` / `get_current_profile()`
+just call them directly before deciding how to submit.
 
 ## Two things that made this non-obvious
 

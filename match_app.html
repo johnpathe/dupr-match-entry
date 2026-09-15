@@ -8,40 +8,41 @@
     --bg: #f4f6f9; --card: #ffffff; --border: #dde3ea; --text: #1c2530;
     --muted: #6b7684; --accent: #2456d6; --accent-hover: #1c44b0;
     --danger: #c0392b; --danger-bg: #fdecea; --ok-bg: #eaf7ee; --ok: #1c7a3d;
+    --warn-bg: #fff6e0; --warn: #8a6100;
   }
   * { box-sizing: border-box; }
   body {
     margin: 0; font-family: -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-    background: var(--bg); color: var(--text); padding: 24px;
+    background: var(--bg); color: var(--text); padding: 18px;
   }
   .wrap { max-width: 980px; margin: 0 auto; }
-  h1 { font-size: 22px; margin: 0 0 4px; }
-  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  h1 { font-size: 21px; margin: 0 0 2px; }
+  .sub { color: var(--muted); margin: 0 0 12px; font-size: 13px; }
   .card {
     background: var(--card); border: 1px solid var(--border); border-radius: 10px;
-    padding: 18px 20px; margin-bottom: 18px;
+    padding: 14px 16px; margin-bottom: 12px;
   }
   .card h2 {
-    font-size: 15px; margin: 0 0 14px; display: flex; align-items: center;
+    font-size: 14px; margin: 0 0 10px; display: flex; align-items: center;
     justify-content: space-between; cursor: pointer; user-select: none;
   }
   .card h2 .chev { font-size: 12px; color: var(--muted); }
-  label { font-size: 12px; color: var(--muted); display: block; margin-bottom: 4px; }
+  label { font-size: 11.5px; color: var(--muted); display: block; margin-bottom: 2px; }
   input[type=text], input[type=date], input[type=number], select {
-    width: 100%; padding: 7px 9px; border: 1px solid var(--border); border-radius: 6px;
+    width: 100%; padding: 6px 8px; border: 1px solid var(--border); border-radius: 6px;
     font-size: 14px; background: #fff; color: var(--text);
   }
-  .row { display: flex; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
   .row > div { flex: 1; min-width: 180px; }
-  .roster-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+  .roster-list { display: flex; flex-wrap: wrap; gap: 5px; margin: 6px 0; }
   .chip {
-    display: inline-flex; align-items: center; gap: 6px; background: #eef2f8;
-    border: 1px solid var(--border); border-radius: 999px; padding: 4px 6px 4px 12px;
-    font-size: 13px;
+    display: inline-flex; align-items: center; gap: 5px; background: #eef2f8;
+    border: 1px solid var(--border); border-radius: 999px; padding: 3px 5px 3px 10px;
+    font-size: 12.5px;
   }
   .chip button {
-    border: none; background: none; color: var(--muted); cursor: pointer; font-size: 15px;
-    line-height: 1; padding: 2px 6px; border-radius: 50%;
+    border: none; background: none; color: var(--muted); cursor: pointer; font-size: 14px;
+    line-height: 1; padding: 2px 5px; border-radius: 50%;
   }
   .chip button:hover { background: var(--danger-bg); color: var(--danger); }
   .search-box { position: relative; max-width: 340px; }
@@ -50,12 +51,12 @@
     border: 1px solid var(--border); border-radius: 8px; margin-top: 4px; max-height: 240px;
     overflow-y: auto; box-shadow: 0 6px 20px rgba(0,0,0,.08);
   }
-  .search-results .item { padding: 8px 12px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f0f2f5; }
+  .search-results .item { padding: 7px 10px; cursor: pointer; font-size: 13px; border-bottom: 1px solid #f0f2f5; }
   .search-results .item:hover { background: #f4f7ff; }
   .search-results .item small { color: var(--muted); }
   button.btn {
     background: var(--accent); color: #fff; border: none; border-radius: 7px;
-    padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
+    padding: 7px 14px; font-size: 13px; font-weight: 600; cursor: pointer;
   }
   button.btn:hover { background: var(--accent-hover); }
   button.btn.secondary { background: #eef1f6; color: var(--text); }
@@ -64,32 +65,48 @@
   button.btn.danger-outline:hover { background: var(--danger-bg); }
   button.btn.submit { background: var(--ok); }
   button.btn.submit:hover { background: #145c2e; }
-  .match-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 14px; background: #fbfcfe; }
-  .match-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-  .team-block { border: 1px dashed var(--border); border-radius: 8px; padding: 10px; margin-bottom: 8px; }
-  .team-block h4 { margin: 0 0 8px; font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
-  .team-cols { display: flex; gap: 10px; }
+  button.btn:disabled { opacity: .5; cursor: not-allowed; }
+  .match-card { border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; background: #fbfcfe; }
+  .match-card .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .teams-row { display: flex; gap: 8px; margin-bottom: 6px; }
+  .team-block { border: 1px dashed var(--border); border-radius: 8px; padding: 7px 8px; flex: 1; }
+  .team-block h4 { margin: 0 0 5px; font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+  .team-cols { display: flex; gap: 6px; }
   .team-cols > div { flex: 1; }
-  .games-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 10px; }
-  .game-col { text-align: center; }
-  .game-col label { text-align: center; }
-  .game-col input { text-align: center; padding: 6px; }
-  .actions-row { display: flex; gap: 10px; margin-top: 10px; align-items: center; }
+  .score-table { display: grid; grid-template-columns: 74px repeat(5, 1fr); gap: 5px; align-items: center; margin-top: 4px; }
+  .score-table .head { font-size: 11px; color: var(--muted); text-align: center; }
+  .score-table .row-label { font-size: 11.5px; font-weight: 600; color: var(--text); white-space: nowrap; }
+  .score-table input { text-align: center; padding: 5px; }
+  .actions-row { display: flex; gap: 8px; margin-top: 8px; align-items: center; flex-wrap: wrap; }
   pre#previewBox {
-    background: #10151d; color: #cfe3ff; padding: 14px; border-radius: 8px;
-    font-size: 12px; max-height: 340px; overflow: auto; white-space: pre-wrap;
+    background: #10151d; color: #cfe3ff; padding: 12px; border-radius: 8px;
+    font-size: 12px; max-height: 320px; overflow: auto; white-space: pre-wrap;
   }
-  .results .item { padding: 8px 10px; border-radius: 6px; margin-bottom: 6px; font-size: 13px; }
+  .results .item { padding: 7px 9px; border-radius: 6px; margin-bottom: 5px; font-size: 13px; }
   .results .ok { background: var(--ok-bg); color: var(--ok); }
   .results .fail { background: var(--danger-bg); color: var(--danger); }
-  .hint { font-size: 12px; color: var(--muted); margin-top: 4px; }
-  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .hint { font-size: 11.5px; color: var(--muted); margin-top: 3px; }
+  .banner {
+    display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    padding: 10px 14px; border-radius: 8px; margin-bottom: 12px; font-size: 13px;
+  }
+  .banner.error { background: var(--danger-bg); color: var(--danger); }
+  .banner.warn { background: var(--warn-bg); color: var(--warn); }
+  .banner.ok { background: var(--ok-bg); color: var(--ok); }
+  .badge {
+    display: inline-block; font-size: 11.5px; font-weight: 600; padding: 2px 8px;
+    border-radius: 999px; margin-left: 6px;
+  }
+  .badge.verified { background: var(--ok-bg); color: var(--ok); }
+  .badge.fallback { background: var(--warn-bg); color: var(--warn); }
 </style>
 </head>
 <body>
 <div class="wrap">
   <h1>DUPR Match Entry</h1>
   <p class="sub">Local tool — nothing reaches DUPR until you click <b>Submit to DUPR</b> and confirm.</p>
+
+  <div id="authBanner"></div>
 
   <div class="card" id="setupCard">
     <h2 onclick="toggleSetup()">Season Setup <span class="chev" id="setupChev">▾</span></h2>
@@ -135,19 +152,14 @@
   </div>
 
   <div class="card">
-    <h2>Preview &amp; Submit</h2>
+    <h2>Preview &amp; Submit <span id="modeBadge"></span></h2>
     <div class="actions-row">
-      <button class="btn secondary" onclick="doPreview()">Preview JSON</button>
+      <button class="btn secondary" onclick="doPreview()">Preview</button>
       <button class="btn secondary" onclick="downloadCsv()">Download CSV (for DUPR's own Import)</button>
       <button class="btn submit" onclick="doSubmit()">Submit to DUPR</button>
     </div>
-    <p class="hint">
-      The CSV button downloads a file in DUPR's own "Import Matches" format
-      (Club Overview → Matches → Import Matches → Download Template is where
-      that format comes from) — use it if you'd rather upload through DUPR's
-      website than click Submit here.
-    </p>
-    <pre id="previewBox">(click Preview to see the exact payload that would be sent)</pre>
+    <p class="hint" id="modeHint"></p>
+    <pre id="previewBox">(click Preview to see exactly what would be sent)</pre>
     <div class="results" id="results"></div>
   </div>
 </div>
@@ -156,11 +168,73 @@
 let roster = { eventName: "", location: "", clubId: null, players: [] };
 let matches = [];
 let matchSeq = 0;
+let submissionMode = { mode: "fallback", reason: "Checking…" };
 
 function todayISO() {
   const d = new Date();
   return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0");
 }
+
+// ---------------------------------------------------------------- auth/status
+
+let reloginPoll = null;
+
+async function checkStatus() {
+  let s;
+  try {
+    s = await (await fetch("/api/status")).json();
+  } catch (e) {
+    renderAuthBanner({authenticated: false, networkError: true});
+    return;
+  }
+  renderAuthBanner(s);
+  return s;
+}
+
+function renderAuthBanner(s) {
+  const el = document.getElementById("authBanner");
+  const badge = document.getElementById("modeBadge");
+  const hint = document.getElementById("modeHint");
+
+  if (!s.authenticated) {
+    el.innerHTML = `
+      <div class="banner error">
+        <span>${s.networkError ? "Can't reach the local server." : "Not logged in to DUPR (or your session expired)."}</span>
+        <button class="btn" id="reloginBtn" onclick="startRelogin()">Log in with browser</button>
+      </div>`;
+    badge.innerHTML = "";
+    hint.textContent = "";
+    submissionMode = {mode: "fallback", reason: "Not logged in."};
+    return;
+  }
+  el.innerHTML = "";
+  submissionMode = s.submission || {mode: "fallback", reason: "Unknown."};
+  if (submissionMode.mode === "verified") {
+    badge.innerHTML = `<span class="badge verified">Verified — no player confirmation needed</span>`;
+    hint.textContent = `Logged in as ${s.user.fullName}, role "${submissionMode.role}" on club ${submissionMode.clubId}. Submitting uploads a club-verified match batch (DUPR's own Import Matches path).`;
+  } else {
+    badge.innerHTML = `<span class="badge fallback">Player-reported — needs confirmation</span>`;
+    hint.textContent = `${submissionMode.reason} Matches submitted will need the other players to confirm the score on DUPR before it counts.`;
+  }
+}
+
+async function startRelogin() {
+  const btn = document.getElementById("reloginBtn");
+  if (btn) { btn.disabled = true; btn.textContent = "Opening browser…"; }
+  await fetch("/api/relogin", {method: "POST"});
+  const el = document.getElementById("authBanner");
+  el.innerHTML = `<div class="banner warn"><span>Log in to DUPR in the Chromium window that just opened. Waiting…</span></div>`;
+  clearInterval(reloginPoll);
+  reloginPoll = setInterval(async () => {
+    const s = await checkStatus();
+    if (s && s.authenticated) {
+      clearInterval(reloginPoll);
+      loadRoster();
+    }
+  }, 3000);
+}
+
+// -------------------------------------------------------------------- roster
 
 async function loadRoster() {
   const r = await fetch("/api/roster");
@@ -204,6 +278,7 @@ async function saveRoster() {
   const hint = document.getElementById("rosterSavedHint");
   hint.textContent = "Saved ✓";
   setTimeout(() => hint.textContent = "", 1500);
+  checkStatus(); // club ID may have changed, re-check permission
 }
 
 let searchTimer = null;
@@ -247,6 +322,8 @@ function renderAllTeamSelects() {
   matches.forEach(m => renderMatch(m.id));
 }
 
+// -------------------------------------------------------------------- matches
+
 function addMatch() {
   const id = ++matchSeq;
   matches.push({
@@ -256,6 +333,11 @@ function addMatch() {
     games: [["", ""]],
   });
   renderMatches();
+  // Jump focus straight to the new match's first player select, so a whole
+  // week's results can be entered from the keyboard without touching the mouse.
+  const card = document.getElementById("match-" + id);
+  const firstSelect = card && card.querySelector("select");
+  if (firstSelect) firstSelect.focus();
 }
 
 function removeMatch(id) {
@@ -294,7 +376,7 @@ function renderMatch(id) {
 
   const teamHtml = (label, teamKey) => `
     <div class="team-block">
-      <h4>${label}</h4>
+      <h4>${label} Players</h4>
       <div class="team-cols">
         <div>
           <select onchange="setTeamPlayer(${id}, '${teamKey}', 0, this.value)">
@@ -307,25 +389,30 @@ function renderMatch(id) {
           </select>
         </div>
       </div>
-      <div class="hint">Leave 2nd slot as "— none —" for singles.</div>
     </div>`;
 
-  const gamesHtml = m.games.map((g, i) => `
-    <div class="game-col">
-      <label>Game ${i+1}</label>
-      <input type="number" min="0" value="${g[0]}" onchange="setGameScore(${id}, ${i}, 0, this.value)">
-      <input type="number" min="0" value="${g[1]}" style="margin-top:6px" onchange="setGameScore(${id}, ${i}, 1, this.value)">
-    </div>`).join("");
+  const nGames = m.games.length;
+  const headCells = Array.from({length: nGames}, (_, i) => `<div class="head">Game ${i+1}</div>`).join("");
+  const row1Cells = m.games.map((g, i) =>
+    `<input type="number" min="0" value="${g[0]}" onchange="setGameScore(${id}, ${i}, 0, this.value)">`).join("");
+  const row2Cells = m.games.map((g, i) =>
+    `<input type="number" min="0" value="${g[1]}" onchange="setGameScore(${id}, ${i}, 1, this.value)">`).join("");
 
   card.innerHTML = `
     <div class="top">
       <strong>Match</strong>
       <button class="btn danger-outline" onclick="removeMatch(${id})">Remove match</button>
     </div>
-    ${teamHtml("Team 1", "team1")}
-    ${teamHtml("Team 2", "team2")}
-    <label>Score</label>
-    <div class="games-grid">${gamesHtml}</div>
+    <div class="teams-row">
+      ${teamHtml("Team 1/A", "team1")}
+      ${teamHtml("Team 2/B", "team2")}
+    </div>
+    <div class="hint">Leave a team's 2nd player as "— none —" for singles.</div>
+    <div class="score-table">
+      <div></div>${headCells}
+      <div class="row-label">Team 1/A</div>${row1Cells}
+      <div class="row-label">Team 2/B</div>${row2Cells}
+    </div>
     <div class="actions-row">
       <button class="btn secondary" onclick="addGame(${id})" ${m.games.length>=5?"disabled":""}>+ Add Game</button>
       <button class="btn secondary" onclick="removeGame(${id})" ${m.games.length<=1?"disabled":""}>- Remove Game</button>
@@ -364,26 +451,47 @@ async function doPreview() {
   if (!body.matches.length) { box.textContent = "Add at least one match first."; return; }
   const r = await fetch("/api/preview", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
   const data = await r.json();
-  box.textContent = JSON.stringify(data.payloads || data, null, 2);
+  if (data.error) { box.textContent = data.error; return; }
+  submissionMode = data.submission || submissionMode;
+  if (submissionMode.mode === "verified") {
+    box.textContent = "CSV that will be uploaded to DUPR (club-verified, no confirmation needed):\n\n" + data.csv;
+  } else {
+    box.textContent = "JSON that will be sent, one match at a time (player-reported, needs confirmation):\n\n"
+      + JSON.stringify(data.payloads, null, 2);
+  }
 }
 
 async function doSubmit() {
   const body = buildRequestBody();
   if (!body.matches.length) { alert("Add at least one match first."); return; }
   const n = body.matches.length;
-  const summary = `Submit ${n} match${n>1?"es":""} to DUPR for "${body.event}" on ${body.date}?\n\nThis goes live on the real DUPR site. Preview first if you haven't.`;
+  const modeNote = submissionMode.mode === "verified"
+    ? "This will be a club-verified import — matches count immediately, no player confirmation."
+    : "This will submit player-reported matches — each needs the other players to confirm.";
+  const summary = `Submit ${n} match${n>1?"es":""} to DUPR for "${body.event}" on ${body.date}?\n\n${modeNote}\n\nThis goes live on the real DUPR site. Preview first if you haven't.`;
   if (!confirm(summary)) return;
 
   const r = await fetch("/api/submit", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(body)});
   const data = await r.json();
   const el = document.getElementById("results");
   el.innerHTML = "";
+
+  if (data.mode === "verified") {
+    const div = document.createElement("div");
+    div.className = "item " + (data.ok ? "ok" : "fail");
+    div.textContent = data.ok
+      ? `Uploaded ${data.matchCount} match(es) as a club-verified import ✓`
+      : `FAILED (HTTP ${data.status || "?"}) — ${JSON.stringify(data.response || data.error)}`;
+    el.appendChild(div);
+    return;
+  }
+
   (data.results || []).forEach((res, i) => {
     const div = document.createElement("div");
     div.className = "item " + (res.ok ? "ok" : "fail");
     const idOut = res.response && res.response.result && res.response.result.id;
     div.textContent = res.ok
-      ? `Match ${i+1}: saved ✓ ${idOut ? "(id " + idOut + ")" : ""}`
+      ? `Match ${i+1}: saved ✓ (needs player confirmation)${idOut ? " (id " + idOut + ")" : ""}`
       : `Match ${i+1}: FAILED — ${res.error || (res.response && res.response.message) || res.status}`;
     el.appendChild(div);
   });
@@ -465,6 +573,7 @@ function downloadCsv() {
 
 // init
 document.getElementById("matchDate").value = todayISO();
+checkStatus();
 loadRoster().then(() => addMatch());
 </script>
 </body>

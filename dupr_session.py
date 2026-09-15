@@ -31,20 +31,30 @@ AT_COOKIE = "__Host-dupr_at"
 ENV_PATH = Path(__file__).with_name(".env")
 
 
-def _load_env() -> None:
+def _read_env_file() -> dict:
+    """Parse .env fresh every call -- deliberately NOT cached into os.environ,
+    so a re-login (get_token.py rewriting .env) is picked up by the very next
+    make_client() call in a long-running process like match_app.py."""
+    values = {}
     if not ENV_PATH.exists():
-        return
+        return values
     for line in ENV_PATH.read_text().splitlines():
         line = line.strip()
         if not line or line.startswith("#") or "=" not in line:
             continue
         key, _, value = line.partition("=")
-        os.environ.setdefault(key.strip(), value.strip().strip('"').strip("'"))
+        values[key.strip()] = value.strip().strip('"').strip("'")
+    return values
+
+
+def get_token() -> str | None:
+    """The current access token, preferring a real env var if one is set."""
+    return os.environ.get("DUPR_BEARER_TOKEN") or _read_env_file().get("DUPR_BEARER_TOKEN")
 
 
 def make_client() -> DUPRClient:
-    _load_env()
-    token = os.environ.get("DUPR_BEARER_TOKEN")
+    env = _read_env_file()
+    token = os.environ.get("DUPR_BEARER_TOKEN") or env.get("DUPR_BEARER_TOKEN")
     if not token:
         raise SystemExit(
             "No token found. Run:  .venv\\Scripts\\python.exe get_token.py"
@@ -53,7 +63,7 @@ def make_client() -> DUPRClient:
     client = DUPRClient(base_url=BASE_URL, version="v1.0")
     client.session.cookies.set(AT_COOKIE, token, domain=API_HOST, secure=True)
 
-    refresh = os.environ.get("DUPR_REFRESH_TOKEN")
+    refresh = os.environ.get("DUPR_REFRESH_TOKEN") or env.get("DUPR_REFRESH_TOKEN")
     if refresh:
         client.session.cookies.set(
             "__Host-dupr_rt", refresh, domain=API_HOST, secure=True
